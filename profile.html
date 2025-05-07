@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - UngaAreaConnect</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="api.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#6D28D9',
+            secondary: '#9333EA',
+          },
+          fontFamily: {
+            sans: ['Poppins', 'sans-serif'],
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(-10px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+          },
+          animation: {
+            fadeIn: 'fadeIn 0.3s ease-out',
+          },
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Poppins', sans-serif; }
+    body.modal-open { overflow: hidden; }
+    .modal-bg { backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+    .job-card {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .job-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+    .avatar-container {
+      position: relative;
+    }
+    .avatar-upload-btn {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      background: #6D28D9;
+      color: white;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .avatar-upload-btn:hover {
+      background: #9333EA;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans">
+  <!-- Header -->
+  <header class="flex items-center justify-between p-4 sm:p-6 bg-white border-b border-purple-200 sticky top-0 z-50">
+    <div class="text-primary font-bold text-xl sm:text-2xl">UngaAreaConnect</div>
+    <nav class="flex gap-2 sm:gap-4">
+      <a href="index.html" class="bg-primary hover:bg-secondary text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition">Back Home</a>
+      <a href="jobs.html" class="bg-primary hover:bg-secondary text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition">Find Jobs</a>
+      <a href="add.html" class="bg-primary hover:bg-secondary text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition">Add Job</a>
+    </nav>
+  </header>
+
+  <!-- Profile Section -->
+  <section class="p-4 sm:p-6 max-w-4xl mx-auto">
+    <div class="bg-white p-6 rounded-lg shadow-md border border-purple-200">
+      <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
+        <div class="avatar-container">
+          <img id="profileAvatar" src="https://via.placeholder.com/100" alt="Profile Avatar" class="w-24 h-24 rounded-full border-2 border-purple-200">
+          <label class="avatar-upload-btn">
+            <input type="file" id="avatarUpload" accept="image/*" class="hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+          </label>
+        </div>
+        <div class="flex-1 text-center sm:text-left">
+          <h2 id="profileName" class="text-xl sm:text-2xl font-bold text-primary">Loading...</h2>
+          <p id="profileEmail" class="text-gray-600 text-sm sm:text-base">Loading...</p>
+          <p id="profileMobile" class="text-gray-600 text-sm sm:text-base">Loading...</p>
+          <button id="logoutBtn" class="bg-primary hover:bg-secondary text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition">Logout</button>
+        </div>
+        <button id="editProfileBtn" class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded-lg text-sm font-semibold transition">Edit Profile</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Aadhaar Verification -->
+  <section class="p-4 sm:p-6 max-w-4xl mx-auto">
+    <div class="bg-white p-6 rounded-lg shadow-md border border-purple-200">
+      <h2 class="text-xl sm:text-2xl font-bold text-primary mb-4">Aadhaar Verification</h2>
+      <p id="aadhaarStatus" class="text-gray-600 mb-4">Status: Not Verified</p>
+      <div class="flex flex-col sm:flex-row gap-4">
+        <input type="tel" id="aadhaarNumber" placeholder="Enter 12-digit Aadhaar number" maxlength="12" class="w-full sm:w-1/2 p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+        <button id="verifyAadhaarBtn" class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded-lg text-sm font-semibold transition">Verify Aadhaar</button>
+      </div>
+      <p id="aadhaarError" class="text-xs text-red-500 mt-1 hidden"></p>
+    </div>
+  </section>
+
+  <!-- Recently Applied Jobs -->
+  <section class="p-4 sm:p-6 max-w-4xl mx-auto">
+    <h2 class="text-xl sm:text-2xl font-bold text-primary mb-4">Recently Applied Jobs</h2>
+    <div id="appliedJobs" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+  </section>
+
+  <!-- Recently Posted Jobs -->
+  <section class="p-4 sm:p-6 max-w-4xl mx-auto">
+    <h2 class="text-xl sm:text-2xl font-bold text-primary mb-4">Recently Posted Jobs</h2>
+    <div id="postedJobs" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+  </section>
+
+  <!-- Edit Profile Modal -->
+  <div id="editProfileModal" class="fixed inset-0 bg-black bg-opacity-50 modal-bg flex items-center justify-center hidden z-50" role="dialog" aria-modal="true" aria-labelledby="editProfileTitle">
+    <div class="bg-white rounded-xl p-4 sm:p-6 w-full sm:w-11/12 md:w-3/4 lg:w-[450px] max-h-[90vh] flex flex-col border border-purple-200" style="animation: fadeIn 0.3s ease-out;">
+      <div class="mb-4 text-center">
+        <h2 id="editProfileTitle" class="text-lg sm:text-xl font-bold text-primary mb-1">Edit Profile</h2>
+        <p class="text-gray-500 text-xs sm:text-sm">Update your details</p>
+      </div>
+      <form id="editProfileForm" class="flex-1 overflow-y-auto space-y-4 pr-2">
+        <div>
+          <label for="editName" class="block text-sm font-medium text-gray-700 mb-1">Full Name <span class="text-red-500">*</span></label>
+          <input type="text" id="editName" placeholder="e.g., John Doe" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" required>
+          <p id="editNameError" class="text-xs text-red-500 mt-1 hidden"></p>
+        </div>
+        <div>
+          <label for="editEmail" class="block text-sm font-medium text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
+          <input type="email" id="editEmail" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-gray-100" readonly>
+        </div>
+        <div>
+          <label for="editMobile" class="block text-sm font-medium text-gray-700 mb-1">Mobile Number <span class="text-red-500">*</span></label>
+          <div class="flex items-center border border-gray-300 rounded-lg p-2 focus-within:ring-2 focus-within:ring-primary">
+            <span class="text-gray-700 mr-1">+91</span>
+            <input type="tel" id="editMobile" pattern="[6-9][0-9]{9}" maxlength="10" placeholder="10-digit number" class="w-full focus:outline-none text-sm" required>
+          </div>
+          <p id="editMobileError" class="text-xs text-red-500 mt-1 hidden"></p>
+        </div>
+        <div>
+          <label for="editLanguage" class="block text-sm font-medium text-gray-700 mb-1">Language</label>
+          <select id="editLanguage" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+            <option value="English">English</option>
+            <option value="Tamil">Tamil</option>
+          </select>
+        </div>
+        <div>
+          <label for="editJobType" class="block text-sm font-medium text-gray-700 mb-1">Preferred Job Type</label>
+          <select id="editJobType" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+            <option value="All Types">All Types</option>
+            <option value="Part-Time">Part-Time</option>
+            <option value="Remote">Remote</option>
+            <option value="One-Time-Gig">One-Time-Gig</option>
+            <option value="Freelancer">Freelancer</option>
+          </select>
+        </div>
+        <div>
+          <label for="editLocation" class="block text-sm font-medium text-gray-700 mb-1">Location (Google Maps Link)</label>
+          <input type="url" id="editLocation" placeholder="e.g., https://maps.google.com/..." class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          <button type="button" onclick="getLocation()" class="mt-1 text-primary hover:underline text-sm">Auto-detect my location</button>
+          <p id="editLocationError" class="text-xs text-red-500 mt-1 hidden"></p>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" id="cancelEditBtn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-400 transition">Cancel</button>
+          <button type="submit" class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded-lg text-sm font-semibold transition" aria-label="Save profile">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Job Modal -->
+  <div id="editJobModal" class="fixed inset-0 bg-black bg-opacity-50 modal-bg flex items-center justify-center hidden z-50" role="dialog" aria-modal="true" aria-labelledby="editJobTitle">
+    <div class="bg-white rounded-xl p-4 sm:p-6 w-full sm:w-11/12 md:w-3/4 lg:w-3/4 max-h-[90vh] overflow-y-auto border border-purple-200" style="animation: fadeIn 0.3s ease-out;">
+      <button id="closeEditJobModalBtn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      <h2 id="editJobTitle" class="text-lg sm:text-xl font-bold text-primary mb-4">Edit Job</h2>
+      <form id="editJobForm" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="editJobTitle" class="block text-sm font-medium text-gray-700 mb-1">Job Title <span class="text-red-500">*</span></label>
+            <input type="text" id="editJobTitle" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" required>
+          </div>
+          <div>
+            <label for="editJobType" class="block text-sm font-medium text-gray-700 mb-1">Job Type <span class="text-red-500">*</span></label>
+            <select id="editJobType" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" required>
+              <option value="Part-Time">Part-Time</option>
+              <option value="Full-Time">Full-Time</option>
+              <option value="Remote">Remote</option>
+              <option value="One-Time-Gig">One-Time-Gig</option>
+              <option value="Freelancer">Freelancer</option>
+            </select>
+          </div>
+          <div>
+            <label for="editJobRole" class="block text-sm font-medium text-gray-700 mb-1">Job Role <span class="text-red-500">*</span></label>
+            <input type="text" id="editJobRole" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" required>
+          </div>
+          <div>
+            <label for="editVacancies" class="block text-sm font-medium text-gray-700 mb-1">Vacancies <span class="text-red-500">*</span></label>
+            <input type="number" id="editVacancies" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" required min="1">
+            <p id="editVacanciesError" class="text-xs text-red-500 mt-1 hidden"></p>
+          </div>
+          <div>
+            <label for="editPhone" class="block text-sm font-medium text-gray-700 mb-1">Contact Number <span class="text-red-500">*</span></label>
+            <input type="tel" id="editPhone" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" required>
+            <p id="editPhoneError" class="text-xs text-red-500 mt-1 hidden"></p>
+          </div>
+          <div>
+            <label for="editPay" class="block text-sm font-medium text-gray-700 mb-1">Pay (₹/hour) <span class="text-red-500">*</span></label>
+            <input type="number" id="editPay" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" required min="300">
+            <p id="editPayError" class="text-xs text-red-500 mt-1 hidden"></p>
+          </div>
+          <div>
+            <label for="editJobDate" class="block text-sm font-medium text-gray-700 mb-1">Job Date <span class="text-red-500">*</span></label>
+            <input type="date" id="editJobDate" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" required>
+          </div>
+          <div>
+            <label for="editCity" class="block text-sm font-medium text-gray-700 mb-1">City <span class="text-red-500">*</span></label>
+            <input type="text" id="editCity" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" required>
+          </div>
+          <div>
+            <label for="editStartTime" class="block text-sm font-medium text-gray-700 mb-1">Start Time <span class="text-red-500">*</span></label>
+            <div class="flex space-x-2">
+              <input type="time" id="editStartTime" class="w-3/4 p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" required>
+              <select id="editStartTimePeriod" class="w-1/4 p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+            </div>
+            <p id="editStartTimeError" class="text-xs text-red-500 mt-1 hidden"></p>
+          </div>
+          <div>
+            <label for="editEndTime" class="block text-sm font-medium text-gray-700 mb-1">End Time <span class="text-red-500">*</span></label>
+            <div class="flex space-x-2">
+              <input type="time" id="editEndTime" class="w-3/4 p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" required>
+              <select id="editEndTimePeriod" class="w-1/4 p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+            </div>
+            <p id="editEndTimeError" class="text-xs text-red-500 mt-1 hidden"></p>
+          </div>
+        </div>
+        <div>
+          <label for="editJobDescription" class="block text-sm font-medium text-gray-700 mb-1">Job Description</label>
+          <textarea id="editJobDescription" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" rows="4"></textarea>
+        </div>
+        <div>
+          <label for="editLocationLink" class="block text-sm font-medium text-gray-700 mb-1">Location Link</label>
+          <input type="url" id="editLocationLink" placeholder="e.g., https://maps.google.com/..." class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          <p id="editLocationLinkError" class="text-xs text-red-500 mt-1 hidden"></p>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button type="button" id="cancelEditJobBtn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-400 transition">Cancel</button>
+          <button type="submit" class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded-lg text-sm font-semibold transition">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Job Modal -->
+  <div id="deleteJobModal" class="fixed inset-0 bg-black bg-opacity-50 modal-bg flex items-center justify-center hidden z-50" role="dialog" aria-modal="true" aria-labelledby="deleteJobTitle">
+    <div class="bg-white rounded-xl p-4 sm:p-6 w-full sm:w-11/12 md:w-3/4 lg:w-[400px] border border-purple-200" style="animation: fadeIn 0.3s ease-out;">
+      <h2 id="deleteJobTitle" class="text-lg sm:text-xl font-bold text-primary mb-4">Delete Job</h2>
+      <p class="text-gray-600 mb-4">Are you sure you want to delete this job?</p>
+      <div class="flex justify-end gap-2">
+        <button id="cancelDeleteJobBtn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-400 transition">Cancel</button>
+        <button id="confirmDeleteJobBtn" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700 transition">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white py-10">
+    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 text-gray-600 text-sm px-6">
+      <div>
+        <h3 class="font-bold text-primary mb-4">UngaAreaConnect</h3>
+        <p>Call now: <a href="tel:+919812367450" class="text-primary hover:underline">+91 9812367450</a></p>
+        <p>Email: <a href="/cdn-cgi/l/email-protection#51222722223d202611253e373131223533313d3c3c3731267c313d3f" class="text-primary hover:underline"><span class="__cf_email__" data-cfemail="4b383e3b3b24393f0b3e252c2a2a392e2a282425252e283f65282a">[email&#160;protected]</span></a></p>
+      </div>
+      <div>
+        <h3 class="font-bold mb-4">Candidate</h3>
+        <ul class="space-y-2">
+          <li><a href="jobs.html" class="hover:text-primary">Browse Jobs</a></li>
+          <li><a href="profile.html" class="hover:text-primary">Candidate Dashboard</a></li>
+          <li><a href="#" class="hover:text-primary">Saved Jobs</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="font-bold mb-4">Employer</h3>
+        <ul class="space-y-2">
+          <li><a href="add.html" class="hover:text-primary">Post a Job</a></li>
+          <li><a href="#" class="hover:text-primary">Browse Candidates</a></li>
+          <li><a href="profile.html" class="hover:text-primary">Employer Dashboard</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="font-bold mb-4">Support</h3>
+        <ul class="space-y-2">
+          <li><a href="#" class="hover:text-primary">FAQ</a></li>
+          <li><a href="#" class="hover:text-primary">Contact Us</a></li>
+          <li><a href="#" class="hover:text-primary">Terms & Conditions</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-10 text-center text-gray-400 text-xs">
+      © 2025 UngaAreaConnect - All Rights Reserved
+    </div>
+  </footer>
+
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+    let currentJobIndex = null;
+
+    let currentJobId = null;
+
+if (localStorage.getItem('isLoggedIn') !== 'true') {
+  window.location.href = 'login.html';
+}
+
+async function loadUserData() {
+  try {
+    const userData = await apiRequest('/users/me');
+    document.getElementById('profileName').textContent = userData.name || 'User Name';
+    document.getElementById('profileEmail').innerHTML = `<a href="mailto:${userData.email || 'email@example.com'}" class="hover:underline">${userData.email || 'Email not set'}</a>`;
+    document.getElementById('profileMobile').textContent = userData.mobile || 'Mobile not set';
+    if (userData.avatar) document.getElementById('profileAvatar').src = userData.avatar;
+    document.getElementById('aadhaarStatus').textContent = userData.aadhaarVerified ? 'Status: Verified' : 'Status: Not Verified';
+    localStorage.setItem('userData', JSON.stringify(userData)); // Optional caching
+  } catch (error) {
+    alert('Error loading user data: ' + error.message);
+  }
+}
+
+async function renderAppliedJobs() {
+  const appliedJobsContainer = document.getElementById('appliedJobs');
+  appliedJobsContainer.innerHTML = '';
+  try {
+    const appliedJobs = await apiRequest('/users/me/applied-jobs');
+    if (!appliedJobs || appliedJobs.length === 0) {
+      appliedJobsContainer.innerHTML = '<p class="text-gray-600 col-span-2">No jobs applied yet.</p>';
+      return;
+    }
+    appliedJobs.forEach(job => {
+      const jobCard = document.createElement('div');
+      jobCard.className = 'job-card bg-white p-4 rounded-lg border border-purple-200 shadow-md';
+      jobCard.innerHTML = `
+        <h3 class="text-base font-bold text-primary mb-2">${job.title}</h3>
+        <p class="text-gray-600 text-xs mb-1"><strong>Role:</strong> ${job.role || 'N/A'}</p>
+        <p class="text-gray-600 text-xs mb-1"><strong>Pay:</strong> ₹${job.pay || 'N/A'}</p>
+        <p class="text-gray-600 text-xs mb-2"><strong>City:</strong> ${job.city || 'Not specified'}</p>
+        ${job.locationLink ? `<p class="text-xs"><a href="${job.locationLink}" target="_blank" class="text-primary hover:underline">View Location</a></p>` : ''}
+        <button onclick="withdrawApplication('${job.id}')" class="mt-2 bg-red-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-red-700 transition">Withdraw</button>
+      `;
+      appliedJobsContainer.appendChild(jobCard);
+    });
+  } catch (error) {
+    appliedJobsContainer.innerHTML = '<p class="text-gray-600 col-span-2">Error loading applied jobs.</p>';
+  }
+}
+
+async function withdrawApplication(jobId) {
+  try {
+    await apiRequest(`/users/me/applied-jobs/${jobId}`, 'DELETE');
+    renderAppliedJobs();
+    alert('Application withdrawn successfully!');
+  } catch (error) {
+    alert('Error withdrawing application: ' + error.message);
+  }
+}
+
+async function renderPostedJobs() {
+  const postedJobsContainer = document.getElementById('postedJobs');
+  postedJobsContainer.innerHTML = '';
+  try {
+    const postedJobs = await apiRequest('/users/me/posted-jobs');
+    if (!postedJobs || postedJobs.length === 0) {
+      postedJobsContainer.innerHTML = '<p class="text-gray-600 col-span-2">No jobs posted yet.</p>';
+      return;
+    }
+    postedJobs.forEach(job => {
+      const jobCard = document.createElement('div');
+      jobCard.className = 'job-card bg-white p-4 rounded-lg border border-purple-200 shadow-md';
+      jobCard.innerHTML = `
+        <h3 class="text-base font-bold text-primary mb-2">${job.title}</h3>
+        <p class="text-gray-600 text-xs mb-1"><strong>Type:</strong> ${job.type || 'N/A'}</p>
+        <p class="text-gray-600 text-xs mb-1"><strong>Pay:</strong> ₹${job.pay || 'N/A'}</p>
+        <p class="text-gray-600 text-xs mb-2"><strong>City:</strong> ${job.city || 'Not specified'}</p>
+        <div class="flex gap-2">
+          <button onclick="editJob('${job.id}')" class="bg-primary text-white px-3 py-1 rounded-lg text-xs hover:bg-secondary transition">Edit</button>
+          <button onclick="deleteJob('${job.id}')" class="bg-red-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-red-700 transition">Delete</button>
+        </div>
+      `;
+      postedJobsContainer.appendChild(jobCard);
+    });
+  } catch (error) {
+    postedJobsContainer.innerHTML = '<p class="text-gray-600 col-span-2">Error loading posted jobs.</p>';
+  }
+}
+
+async function editJob(jobId) {
+  try {
+    const job = await apiRequest(`/jobs/${jobId}`);
+    document.getElementById('editJobTitle').value = job.title || '';
+    document.getElementById('editJobType').value = job.type || 'Part-Time';
+    document.getElementById('editJobRole').value = job.role || '';
+    document.getElementById('editVacancies').value = job.vacancies || 1;
+    document.getElementById('editPhone').value = job.phone || '';
+    document.getElementById('editPay').value = job.pay || 300;
+    document.getElementById('editJobDate').value = job.date || '';
+    document.getElementById('editCity').value = job.city || '';
+    document.getElementById('editStartTime').value = job.startTime ? job.startTime.split(' ')[0] : '';
+    document.getElementById('editStartTimePeriod').value = job.startTime ? job.startTime.split(' ')[1] : 'AM';
+    document.getElementById('editEndTime').value = job.endTime ? job.endTime.split(' ')[0] : '';
+    document.getElementById('editEndTimePeriod').value = job.endTime ? job.endTime.split(' ')[1] : 'AM';
+    document.getElementById('editJobDescription').value = job.description || '';
+    document.getElementById('editLocationLink').value = job.locationLink || '';
+    currentJobId = jobId;
+    document.getElementById('editJobModal').classList.remove('hidden');
+    document.body.classList.add('modal-open');
+  } catch (error) {
+    alert('Error loading job data: ' + error.message);
+  }
+}
+
+async function deleteJob(jobId) {
+  currentJobId = jobId;
+  document.getElementById('deleteJobModal').classList.remove('hidden');
+  document.body.classList.add('modal-open');
+}
+
+function getLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        document.getElementById('editLocation').value = `https://www.google.com/maps?q=${lat},${lon}`;
+      },
+      () => alert('Location access denied.')
+    );
+  } else {
+    alert('Geolocation is not supported by this browser.');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadUserData();
+  renderAppliedJobs();
+  renderPostedJobs();
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.removeItem('token');
+    localStorage.setItem('isLoggedIn', 'false');
+    localStorage.removeItem('userData');
+    window.location.href = 'index.html';
+  });
+
+  document.getElementById('editProfileBtn').addEventListener('click', async () => {
+    try {
+      const userData = await apiRequest('/users/me');
+      document.getElementById('editName').value = userData.name || '';
+      document.getElementById('editEmail').value = userData.email || '';
+      document.getElementById('editMobile').value = userData.mobile?.replace('+91', '') || '';
+      document.getElementById('editLanguage').value = userData.language || 'English';
+      document.getElementById('editJobType').value = userData.preferredJobType || 'All Types';
+      document.getElementById('editLocation').value = userData.locationLink || '';
+      document.getElementById('editProfileModal').classList.remove('hidden');
+      document.body.classList.add('modal-open');
+    } catch (error) {
+      alert('Error loading profile data: ' + error.message);
+    }
+  });
+
+  document.getElementById('editProfileForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const updatedData = {
+      name: document.getElementById('editName').value.trim(),
+      mobile: `+91${document.getElementById('editMobile').value.trim()}`,
+      language: document.getElementById('editLanguage').value,
+      preferredJobType: document.getElementById('editJobType').value,
+      locationLink: document.getElementById('editLocation').value.trim()
+    };
+    try {
+      await apiRequest('/users/me', 'PUT', updatedData);
+      loadUserData();
+      document.getElementById('editProfileModal').classList.add('hidden');
+      document.body.classList.remove('modal-open');
+      alert('Profile updated successfully!');
+    } catch (error) {
+      alert('Error updating profile: ' + error.message);
+    }
+  });
+
+  document.getElementById('cancelEditBtn').addEventListener('click', () => {
+    document.getElementById('editProfileModal').classList.add('hidden');
+    document.body.classList.remove('modal-open');
+  });
+
+  document.getElementById('avatarUpload').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (file) {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      try {
+        await apiRequest('/users/me/avatar', 'POST', formData);
+        loadUserData();
+        alert('Avatar uploaded successfully!');
+      } catch (error) {
+        alert('Error uploading avatar: ' + error.message);
+      }
+    }
+  });
+
+  document.getElementById('verifyAadhaarBtn').addEventListener('click', async () => {
+    const aadhaarNumber = document.getElementById('aadhaarNumber').value;
+    const aadhaarError = document.getElementById('aadhaarError');
+    aadhaarError.classList.add('hidden');
+    if (!/^\d{12}$/.test(aadhaarNumber)) {
+      aadhaarError.textContent = 'Please enter a valid 12-digit Aadhaar number.';
+      aadhaarError.classList.remove('hidden');
+      return;
+    }
+    try {
+      await apiRequest('/users/me/verify-aadhaar', 'POST', { aadhaarNumber });
+      loadUserData();
+      document.getElementById('aadhaarNumber').value = '';
+      alert('Aadhaar verified successfully!');
+    } catch (error) {
+      aadhaarError.textContent = 'Verification failed: ' + error.message;
+      aadhaarError.classList.remove('hidden');
+    }
+  });
+
+  document.getElementById('editJobForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const jobData = {
+      title: document.getElementById('editJobTitle').value.trim(),
+      type: document.getElementById('editJobType').value,
+      role: document.getElementById('editJobRole').value.trim(),
+      vacancies: parseInt(document.getElementById('editVacancies').value),
+      phone: document.getElementById('editPhone').value.trim(),
+      pay: parseInt(document.getElementById('editPay').value),
+      date: document.getElementById('editJobDate').value,
+      city: document.getElementById('editCity').value.trim(),
+      startTime: `${document.getElementById('editStartTime').value} ${document.getElementById('editStartTimePeriod').value}`,
+      endTime: `${document.getElementById('editEndTime').value} ${document.getElementById('editEndTimePeriod').value}`,
+      description: document.getElementById('editJobDescription').value.trim(),
+      locationLink: document.getElementById('editLocationLink').value.trim()
+    };
+    try {
+      await apiRequest(`/jobs/${currentJobId}`, 'PUT', jobData);
+      document.getElementById('editJobModal').classList.add('hidden');
+      document.body.classList.remove('modal-open');
+      renderPostedJobs();
+      alert('Job updated successfully!');
+    } catch (error) {
+      alert('Error updating job: ' + error.message);
+    }
+  });
+
+  document.getElementById('cancelEditJobBtn').addEventListener('click', () => {
+    document.getElementById('editJobModal').classList.add('hidden');
+    document.body.classList.remove('modal-open');
+  });
+
+  document.getElementById('closeEditJobModalBtn').addEventListener('click', () => {
+    document.getElementById('editJobModal').classList.add('hidden');
+    document.body.classList.remove('modal-open');
+  });
+
+  document.getElementById('confirmDeleteJobBtn').addEventListener('click', async () => {
+    try {
+      await apiRequest(`/jobs/${currentJobId}`, 'DELETE');
+      document.getElementById('deleteJobModal').classList.add('hidden');
+      document.body.classList.remove('modal-open');
+      renderPostedJobs();
+      alert('Job deleted successfully!');
+    } catch (error) {
+      alert('Error deleting job: ' + error.message);
+    }
+  });
+
+  document.getElementById('cancelDeleteJobBtn').addEventListener('click', () => {
+    document.getElementById('deleteJobModal').classList.add('hidden');
+    document.body.classList.remove('modal-open');
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      document.getElementById('editProfileModal').classList.add('hidden');
+      document.getElementById('editJobModal').classList.add('hidden');
+      document.getElementById('deleteJobModal').classList.add('hidden');
+      document.body.classList.remove('modal-open');
+    }
+  });
+});
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93a9b0147fe644ee',t:'MTc0NjM3OTQyNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
